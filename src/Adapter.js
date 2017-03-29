@@ -1,7 +1,10 @@
+const EventEmitter = require('events');
 const debug = require('debug')('eqws-adapter');
 
-class Adapter {
+class Adapter extends EventEmitter {
 	constructor(wss, opts = {}) {
+		super();
+
 		this._sids = {};
 		this._rooms = {};
 		this._options = opts;
@@ -125,8 +128,8 @@ class Adapter {
 				const socket = this._wss._connected[socketId];
 
 				if (socket) {
-					socket._sendPacket(packet);
-					packet[socketId] = true;
+					socket.send(packet);
+					sids[socketId] = true;
 				} else {
 					delete this._rooms[room][socketId];
 					delete this._sids[socketId];
