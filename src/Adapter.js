@@ -29,7 +29,7 @@ class Adapter extends EventEmitter {
 				this._rooms[room][socketId] = true;
 			}
 
-			process.nextTick(resolve);
+			process.nextTick(resolve.bind(null, true));
 		});
 	}
 
@@ -52,7 +52,7 @@ class Adapter extends EventEmitter {
 				}
 			}
 
-			process.nextTick(resolve);
+			process.nextTick(resolve.bind(null, true));
 		});
 	}
 
@@ -62,7 +62,7 @@ class Adapter extends EventEmitter {
 
 			debug('socket=%s leave from all rooms', socketId);
 
-			if (!rooms) return process.nextTick(resolve);
+			if (!rooms) return process.nextTick(resolve.bind(null, true));
 
 			for(let room in rooms) {
 				if (this._rooms.hasOwnProperty(room)) continue;
@@ -75,26 +75,31 @@ class Adapter extends EventEmitter {
 			}
 
 			delete this._sids[socketId];
-			process.nextTick(resolve);
+			process.nextTick(resolve.bind(null, true));
 		});
 	}
 
 	clients(rooms) {
 		// Adapt rooms array
-		if (!Array.isArray(rooms)) rooms = [rooms];
+		if (rooms && !Array.isArray(rooms)) rooms = [rooms];
 
 		return new Promise((resolve, reject) => {
-			const sids = [];
-			const ids = {};
+			let sids = [];
+			let ids = {};
 
-			for (let room in rooms) {
-				const list = this._rooms[room];
+			if (rooms) {
+				for (let room in rooms) {
+					const list = this._rooms[room];
 
-				for (let socketId in list) {
-					if (ids[socketId]) continue;
-					sids.push(socketId);
-					ids[socketId] = true;
+					for (let socketId in list) {
+						if (ids[socketId]) continue;
+						sids.push(socketId);
+						ids[socketId] = true;
+					}
 				}
+			} else {
+				// Return all connected clients
+				sids = this._wss._sockets.map(v => v.id);
 			}
 
 			process.nextTick(resolve.bind(null, sids));
